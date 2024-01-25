@@ -85,8 +85,6 @@ const signupUser = async (req, res) => {
 
 const signinUser = async (req, res) => {
     const errors = validationResult(req);
-    console.log("hello");
-
     if (!errors.isEmpty()) {
         console.log('entered');
         return res.status(401).json({ errors: errors.array() });
