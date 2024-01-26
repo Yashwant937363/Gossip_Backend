@@ -9,7 +9,23 @@ const sharp = require('sharp')
 
 const JWT_SECRET = process.env.JWT_SECRET
 
-const getUser = () => {
+const getUser = async (req, res) => {
+    const user = await User.findById(req.user.id)
+    if (user) {
+        return res.status(200).json({
+            msg: "Sussessfully Login",
+            user: {
+                profile : user.ProfilePicture,
+                username : user.Username,
+                firstname : user.FirstName,
+                lastname : user.LastName,
+                email : user.Email,
+                uid : user.uid,
+                dob : user.DOB,
+            }
+        })
+    }
+    res.status(404).json({ error: "Automatic Login Failed" })
 
 }
 
@@ -57,8 +73,10 @@ const signupUser = async (req, res) => {
         const password = await bcrypt.hash(req.body.password, salt)
         const dob = new Date(req.body.dob);
         const fullname = JSON.parse(req.body.fullname)
+        
+        
         const newUser = await User.create({
-            ProfilePicture: req.file ? `/assets/profile/${req.body.email}.jpg` : '',
+            ProfilePicture: req.file ? `/api/auth/profile/${req.body.email}.jpg` : '',
             Username: req.body.username,
             FirstName: fullname.firstname,
             LastName: fullname.lastname,
@@ -110,13 +128,11 @@ const signinUser = async (req, res) => {
         };
 
         const authtoken = jwt.sign(data, JWT_SECRET);
-
         // Check and send the file if it exists
-        const filePath = `/api/auth/profile/${user.Email}.jpg`;
         res.status(200).json({
             authtoken,
             'msg': "Login Successful",
-            profile : user.ProfilePicture !== ''? filePath : '',
+            profile: user.ProfilePicture,
             username: user.Username,
             fullname: { firstname: user.FirstName, lastname: user.LastName },
             uid: user.uid,
