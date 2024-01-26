@@ -6,13 +6,12 @@ const authUser = (req, res , next) => {
     if(!token) {
         res.status(401).send({msg:"give correct auth token"})
     }
-    
     try{
-        const user = jwt.verify(token,JWT_SECRET)
+        const data = jwt.verify(token,JWT_SECRET)
         req.user = data.user;
         next();
     }catch (error){
-        res.status(401).send({msg:"give correct auth token"})
+        res.status(401).send({msg:"give correct Auth token"})
     }
 }
 
