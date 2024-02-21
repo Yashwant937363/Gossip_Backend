@@ -1,7 +1,7 @@
 const Chat = require("../schemas/chat")
 
 module.exports = (io, socket, UsersStore) => {
-    const createConnection = function ({ profile, uid, username }, acknowledgmentCallback) {
+    const createConnection = async function ({ profile, uid, username }, acknowledgmentCallback) {
         try {
             UsersStore.saveUser(uid, {
                 uid: uid,
@@ -11,6 +11,22 @@ module.exports = (io, socket, UsersStore) => {
             })
             socket.uid = uid
             socket.join(uid)
+            const friends = await Chat.find({
+                $or: [
+                    { Sender_ID: uid },
+                    { Receiver_ID: uid }
+                ],
+                text: 'friend'
+            })
+
+            friends.map(async (item) => {
+                if (item.Sender_ID === uid) {
+                    socket.to(item.Receiver_ID).emit("friendonline", { uid })
+                } else {
+                    socket.to(item.Sender_ID).emit("friendonline", { uid })
+                }
+            })
+
             acknowledgmentCallback({ success: true, msg: 'user connected succesfully' })
         }
         catch (err) {
@@ -25,14 +41,24 @@ module.exports = (io, socket, UsersStore) => {
 
     const sendRequestUser = async function (fromuid, touid, userfeedback) {
         if (fromuid.length === 5 && touid.length === 5) {
-            const fromuser = UsersStore.getUser(fromuid)
-            const touser = UsersStore.getUser(touid)
-
-            if (fromuser.uid && touser.uid) {
-                socket.to(touser.uid).emit("requestfromuser", { uid: fromuser.uid, profile: fromuser.profile, username: fromuser.username })
-                userfeedback("Request Send")
+            const friend = await Chat.findOne({
+                $or: [
+                    { Sender_ID: fromuid, Receiver_ID: touid },
+                    { Sender_ID: touid, Receiver_ID: fromuid }
+                ]
+            })
+            if (friend) {
+                userfeedback("Your Already Friends")
             } else {
-                userfeedback("user not found")
+                const fromuser = UsersStore.getUser(fromuid)
+                const touser = UsersStore.getUser(touid)
+
+                if (fromuser?.uid && touser?.uid) {
+                    socket.to(touser.uid).emit("requestfromuser", { uid: fromuser.uid, profile: fromuser.profile, username: fromuser.username })
+                    userfeedback("Request Send")
+                } else {
+                    userfeedback("User not Online")
+                }
             }
             //write code for user might be offline
         } else {
@@ -40,23 +66,50 @@ module.exports = (io, socket, UsersStore) => {
         }
     }
 
-    const handleDisconnect = function () {
+    const handleDisconnect = async function () {
+        const uid = socket.uid
         if (socket.uid) {
-            UsersStore.userDisconnected(socket.uid)
+            const friends = await Chat.find({
+                $or: [
+                    { Sender_ID: uid },
+                    { Receiver_ID: uid }
+                ],
+                text: 'friend'
+            })
+            friends.map(async (item) => {
+                if (item.Sender_ID === uid) {
+                    socket.to(item.Receiver_ID).emit("friendoffline", { uid })
+                } else {
+                    socket.to(item.Sender_ID).emit("friendoffline", { uid })
+                }
+            })
+            UsersStore.userDisconnected(uid)
         }
         console.log("Username Disconnected : ", socket.id)
     }
 
-    const requestAnswer = function ({ tousername, fromuid, touid, answer }, userfeedback) {
+    const requestAnswer = async function ({ tousername, fromuid, touid, answer }, userfeedback) {
         if (answer) {
-            Chat.create({
-                Sender_ID: fromuid,
-                Receiver_ID: touid,
-                text: '',
+            const friend = await Chat.findOne({
+                $or: [
+                    { Sender_ID: fromuid, Receiver_ID: touid },
+                    { Sender_ID: touid, Receiver_ID: fromuid }
+                ]
             })
-            socket.to(fromuid).emit("message", "request accepted by " + tousername)
+            if (friend) {
+                userfeedback("Your Already Friends")
+            } else {
+                await Chat.create({
+                    Sender_ID: fromuid,
+                    Receiver_ID: touid,
+                    text: 'friend',
+                })
+                socket.to(fromuid).emit("successmessage", "Request Accepted by " + tousername)
+                userfeedback("You Accepted the Request")
+            }
         } else {
-            userfeedback("Ok")
+            socket.to(fromuid).emit("errormessage", "Request Rejected by " + tousername)
+            userfeedback("You Rejected the Request")
         }
     }
 

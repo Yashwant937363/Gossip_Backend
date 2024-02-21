@@ -1,5 +1,5 @@
 // abstract class
-class UsersStore {
+class UserStore {
     getUser(uid) { }
     findUser(uid) { }
     saveUser(uid, session) { }
@@ -7,7 +7,7 @@ class UsersStore {
 }
 
 
-class ServerUserStore extends UsersStore {
+class ServerUserStore extends UserStore {
     constructor() {
         super()
         this.users = new Map()
@@ -19,7 +19,7 @@ class ServerUserStore extends UsersStore {
             if (socketuid !== item.uid) {
                 return regex.test(item.uid);
             }
-        });
+        }) || [];
         const Users = results.map((user) => ({
             uid: user.uid,
             profile: user.profile,
@@ -45,6 +45,8 @@ class ServerUserStore extends UsersStore {
     }
 }
 
+const UsersStore = new ServerUserStore()
+
 module.exports = {
-    ServerUserStore
+    UsersStore
 }
