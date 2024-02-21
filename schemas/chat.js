@@ -3,18 +3,22 @@ const Schema = mongoose.Schema;
 
 const chatSchema = new Schema({
     Sender_ID: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: 'User',
-        required : true
+        required: true
     },
     Receiver_ID: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: 'User',
-        required : true
+        required: true
     },
     text: {
         type: String,
         required: true
+    },
+    seen: {
+        type: Boolean,
+        default: null
     }
 }, { timestamps: true });
 
