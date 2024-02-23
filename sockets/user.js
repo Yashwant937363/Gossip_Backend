@@ -1,4 +1,5 @@
 const Chat = require("../schemas/chat");
+const User = require("../schemas/user");
 
 module.exports = (io, socket, UsersStore) => {
   const createConnection = async function (
@@ -113,9 +114,17 @@ module.exports = (io, socket, UsersStore) => {
           Receiver_ID: touid,
           text: "friend",
         });
-        socket
-          .to(fromuid)
-          .emit("successmessage", "Request Accepted by " + tousername);
+        const user = UsersStore.getUser(touid);
+        console.log(user);
+        socket.to(fromuid).emit("successmessage", {
+          msg: "Request Accepted by " + tousername,
+          user: {
+            username: user.username,
+            uid: user.uid,
+            profile: user.profile,
+            online: true,
+          },
+        });
         userfeedback("You Accepted the Request");
       }
     } else {
