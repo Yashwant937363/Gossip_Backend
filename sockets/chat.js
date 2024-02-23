@@ -32,6 +32,7 @@ module.exports = (io, socket, UsersStore) => {
         { Sender_ID: fromuid, Receiver_ID: touid },
         { seen: true }
       );
+      console.log("fromuid : ", fromuid, "touid : ", touid);
       socket.to(fromuid).emit("seenmessages", { uid: touid });
     } catch (error) {
       console.log(error);
