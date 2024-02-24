@@ -15,7 +15,7 @@ const { Server } = require("socket.io");
 const { UsersStore } = require("./store/sessionStore");
 const io = new Server(server, {
   cors: {
-    origin: "https://gossipapp-by-yashwant.netlify.app",
+    origin: "https://gossip-app-dz7b.onrender.com",
   },
 });
 
