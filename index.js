@@ -30,7 +30,7 @@ io.on("connection", onConnection);
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://gossipapp-by-yashwant.netlify.app",
+    origin: "https://gossip-app-dz7b.onrender.com",
   })
 );
 
