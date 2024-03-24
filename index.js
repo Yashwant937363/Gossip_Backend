@@ -30,7 +30,7 @@ io.on("connection", onConnection);
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:517https://gossip-app-dz7b.onrender.com3",
+    origin: "https://gossip-app-dz7b.onrender.com",
   })
 );
 
