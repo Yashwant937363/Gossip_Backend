@@ -6,6 +6,29 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
+const { initializeApp } = require("firebase/app");
+const {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} = require("firebase/storage");
+
+const firebaseConfig = {
+  apiKey: process.env.apiKey,
+  authDomain: process.env.authDomain,
+  projectId: process.env.projectId,
+  storageBucket: process.env.storageBucket,
+  messagingSenderId: process.env.messagingSenderId,
+  appId: process.env.appId,
+  measurementId: process.env.measurementId,
+};
+
+initializeApp(firebaseConfig);
+const storage = getStorage();
+const metadata = {
+  contentType: "image/jpeg",
+};
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -34,7 +57,7 @@ const signupUser = async (req, res) => {
   if (!errors.isEmpty()) {
     return res.status(401).json({ errors: errors.array() });
   }
-
+  let url;
   try {
     const existingUser = await User.findOne({ Email: req.body.email });
     if (existingUser) {
@@ -44,8 +67,12 @@ const signupUser = async (req, res) => {
     }
     if (req.file) {
       const inputimagepath = `./assets/profile/${req.file.filename}`;
-      const outputimagepath = `./assets/profile/${req.body.email}.jpg`;
+      const outputimagepath = `./assets/profile/${req.body.email}.jpeg`;
       try {
+        const storageRef = ref(
+          storage,
+          `profilePicture/${req.body.email}.jpeg`
+        );
         await sharp(inputimagepath)
           .resize({
             width: 400,
@@ -58,24 +85,26 @@ const signupUser = async (req, res) => {
             progressive: true,
             chromaSubsampling: "4:2:0",
           })
-          .toFile(outputimagepath, (err, info) => {
+          .toFile(outputimagepath, async (err, info) => {
             if (err) {
               console.log("Error while proccessing an image", err);
             }
           });
+        const data = fs.readFileSync(outputimagepath);
+        const snapshot = await uploadBytes(storageRef, data, metadata);
+        url = await getDownloadURL(snapshot.ref);
       } catch (sharperror) {
         console.log("Error while processing image : ", sharperror);
         return res.status(500).json({ error: "Image Processing Error" });
       }
     }
-
     const salt = await bcrypt.genSalt();
     const password = await bcrypt.hash(req.body.password, salt);
     const dob = new Date(req.body.dob);
     const fullname = JSON.parse(req.body.fullname);
 
     const newUser = await User.create({
-      ProfilePicture: req.file ? `/api/auth/profile/${req.body.email}.jpg` : "",
+      ProfilePicture: req.file ? url : "",
       Username: req.body.username,
       FirstName: fullname.firstname,
       LastName: fullname.lastname,
