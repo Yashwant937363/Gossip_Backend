@@ -22,6 +22,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, "tmp" + file.originalname);
+    console.log("Request Body : ");
   },
 });
 const upload = multer({ storage: storage });
