@@ -27,7 +27,7 @@ const firebaseConfig = {
 initializeApp(firebaseConfig);
 const storage = getStorage();
 const metadata = {
-  contentType: "image/jpeg",
+  contentType: "image/png",
 };
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -67,37 +67,43 @@ const signupUser = async (req, res) => {
     }
     if (req.file) {
       const inputimagepath = `./assets/profile/${req.file.filename}`;
-      const outputimagepath = `./assets/profile/${req.body.email}.jpeg`;
+      const outputimagepath = `./assets/profile/${req.body.email}.png`;
       try {
-        const storageRef = ref(
-          storage,
-          `profilePicture/${req.body.email}.jpeg`
-        );
-        await sharp(inputimagepath)
-          .resize({
-            width: 400,
-            height: 400,
-            fit: "cover",
-            withoutEnlargement: true,
-          })
-          .toFormat("jpeg", {
-            quality: 100,
-            progressive: true,
-            chromaSubsampling: "4:2:0",
-          })
-          .toFile(outputimagepath, async (err, info) => {
-            if (err) {
-              console.log("Error while proccessing an image", err);
-            }
+        let downloadurl;
+        const storageRef = ref(storage, `profilePicture/${req.body.email}.png`);
+        const imageProccesing = () => {
+          return new Promise((resolve, reject) => {
+            sharp(inputimagepath)
+              .resize({
+                width: 400,
+                height: 400,
+                fit: "cover",
+                withoutEnlargement: true,
+              })
+              .toFormat("png", {
+                quality: 100,
+                progressive: true,
+                chromaSubsampling: "4:2:0",
+              })
+              .toFile(outputimagepath, async (err, info) => {
+                if (err) {
+                  console.log("Error while proccessing an image", err);
+                  return res.json({ msg: "Something went wrong" });
+                }
+                const data = fs.readFileSync(outputimagepath);
+                const snapshot = await uploadBytes(storageRef, data, metadata);
+                downloadurl = await getDownloadURL(snapshot.ref);
+                resolve(downloadurl);
+              });
           });
-        const data = fs.readFileSync(outputimagepath);
-        const snapshot = await uploadBytes(storageRef, data, metadata);
-        url = await getDownloadURL(snapshot.ref);
+        };
+        url = await imageProccesing();
       } catch (sharperror) {
-        console.log("Error while processing image : ", sharperror);
+        console.log("Error while processing image Sharp Error :", sharperror);
         return res.status(500).json({ error: "Image Processing Error" });
       }
     }
+
     const salt = await bcrypt.genSalt();
     const password = await bcrypt.hash(req.body.password, salt);
     const dob = new Date(req.body.dob);

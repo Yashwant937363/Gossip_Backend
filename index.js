@@ -15,7 +15,7 @@ const { Server } = require("socket.io");
 const { UsersStore } = require("./store/sessionStore");
 const io = new Server(server, {
   cors: {
-    origin: "https://gossip-app-dz7b.onrender.com",
+    origin: "http://localhost:5173",
   },
 });
 
@@ -30,7 +30,7 @@ io.on("connection", onConnection);
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://gossip-app-dz7b.onrender.com",
+    origin: "http://localhost:5173",
   })
 );
 
