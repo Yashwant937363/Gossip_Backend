@@ -10,30 +10,32 @@ connectDatabase(conStr);
 const app = express();
 const registerUserHandlers = require("./sockets/user");
 const registerChatHandlers = require("./sockets/chat");
+const registerCallHandlers = require("./sockets/call");
 const server = require("http").createServer(app);
 const { Server } = require("socket.io");
 const { UsersStore } = require("./store/sessionStore");
 const io = new Server(server, {
-  cors: {
-    origin: "https://gossip-app-dz7b.onrender.com",
-  },
+  cors: {},
+  // {
+  //   origin: process.env.CORS_CLIENT_URL,
+  // },
 });
 
 const onConnection = (socket) => {
   console.log("a user connected", socket.id);
   registerUserHandlers(io, socket, UsersStore);
   registerChatHandlers(io, socket, UsersStore);
+  registerCallHandlers(io, socket);
 };
 
 io.on("connection", onConnection);
 
 app.use(express.json());
 app.use(
-  cors({
-    origin: "https://gossip-app-dz7b.onrender.com",
-  })
+  cors()
+  // {
+  //   origin: process.env.CORS_CLIENT_URL,}
 );
-
 app.get("/", (req, res) => {
   res.send("hello world");
 });

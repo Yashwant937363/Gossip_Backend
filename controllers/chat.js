@@ -43,7 +43,7 @@ const getFriendsandChats = async (req, res) => {
             (onlineuser.online = true);
         } else {
           const finduser = await User.findOne({ uid: onlineuser.uid });
-          onlineuser.profile = finduser.ProfilePicture;
+          onlineuser.profile = finduser?.ProfilePicture;
           onlineuser.username = finduser.Username;
         }
         return onlineuser;
