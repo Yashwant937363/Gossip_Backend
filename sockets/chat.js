@@ -5,6 +5,9 @@ module.exports = (io, socket, UsersStore) => {
     { fromuid, touid, message },
     acknowledgmentCallback
   ) => {
+    if (message.trim() == "") {
+      return acknowledgmentCallback(false);
+    }
     const user = UsersStore.getUser(touid);
     let newChat;
     if (user) {
