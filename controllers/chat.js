@@ -16,7 +16,9 @@ const getFriendsandChats = async (req, res) => {
     });
 
     if (friends.length == 0) {
-      return res.send("no friends found");
+      return res.json({
+        error: "no friends found",
+      });
     }
 
     const newFriends = await Promise.all(
