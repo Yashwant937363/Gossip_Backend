@@ -11,6 +11,7 @@ const app = express();
 const registerUserHandlers = require("./sockets/user");
 const registerChatHandlers = require("./sockets/chat");
 const registerCallHandlers = require("./sockets/call");
+const registerAiProxyHandlers = require("./sockets/ai_proxy");
 const server = require("http").createServer(app);
 const { Server } = require("socket.io");
 const { UsersStore } = require("./store/sessionStore");
@@ -26,6 +27,7 @@ const onConnection = (socket) => {
   registerUserHandlers(io, socket, UsersStore);
   registerChatHandlers(io, socket, UsersStore);
   registerCallHandlers(io, socket);
+  registerAiProxyHandlers(io, socket, UsersStore);
 };
 
 io.on("connection", onConnection);
