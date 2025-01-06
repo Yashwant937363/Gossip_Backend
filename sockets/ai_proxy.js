@@ -10,5 +10,12 @@ module.exports = (io, socket, UsersStore) => {
     console.log(data.data);
     response(data.data);
   };
+  const handleImageAnalyze = async ({ url }, response) => {
+    const data = await axios.post(AIServerURL + "/api/ai/analyze-image", {
+      url,
+    });
+    response(data.data?.caption);
+  };
   socket.on("ai:chatbot:fromclient", handleChatbotRequest);
+  socket.on("ai:image-analyze", handleImageAnalyze);
 };
