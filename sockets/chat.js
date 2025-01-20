@@ -67,7 +67,6 @@ module.exports = (io, socket, UsersStore) => {
 
   const receiverSeenMessages = async ({ fromuid, touid }) => {
     try {
-      console.log(fromuid, touid);
       await Chat.updateMany(
         { Sender_ID: fromuid, Receiver_ID: touid },
         { seen: true }
