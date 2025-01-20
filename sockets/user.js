@@ -65,7 +65,7 @@ module.exports = (io, socket, UsersStore) => {
             profile: fromuser.profile,
             username: fromuser.username,
           });
-          userfeedback("Request Send");
+          userfeedback("Request Sent");
         } else {
           userfeedback("User not Online");
         }
@@ -112,6 +112,7 @@ module.exports = (io, socket, UsersStore) => {
         await Chat.create({
           Sender_ID: fromuid,
           Receiver_ID: touid,
+          type: "friend",
           text: "friend",
         });
         const user = UsersStore.getUser(touid);
