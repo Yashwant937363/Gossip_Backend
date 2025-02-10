@@ -6,6 +6,7 @@ const {
   getDownloadURL,
 } = require("firebase/storage");
 const { initializeApp } = require("firebase/app");
+const { translateSingleMessage } = require("./ai_proxy");
 
 const firebaseConfig = {
   apiKey: process.env.apiKey,
@@ -31,7 +32,6 @@ module.exports = (io, socket, UsersStore) => {
         return acknowledgmentCallback(false);
       }
     } else if (type === "image") {
-      console.log(message);
       const buffer = Buffer.from(message?.data);
       const extension = message?.type.split("/")[1];
       const fileName = `image_${Date.now() + "." + extension}`;
@@ -40,18 +40,27 @@ module.exports = (io, socket, UsersStore) => {
         contentType: message?.type,
       });
       const downloadurl = await getDownloadURL(snapshot.ref);
-      console.log(downloadurl);
       message = downloadurl;
     }
     const user = UsersStore.getUser(touid);
     if (user) {
+      let getTranslated;
+      if (user.settings?.translation.alwaysTranslate) {
+        getTranslated = await translateSingleMessage({
+          id: "new",
+          text: message,
+          to: user.settings?.translation.language,
+        });
+      }
       newChat = await Chat.create({
         Sender_ID: fromuid,
         Receiver_ID: touid,
         text: message,
         type: type,
         seen: false,
+        translatedText: [getTranslated],
       });
+      socket.to(touid).emit("chat:receivemessage", newChat);
     } else {
       newChat = await Chat.create({
         Sender_ID: fromuid,
@@ -60,8 +69,7 @@ module.exports = (io, socket, UsersStore) => {
         text: message,
       });
     }
-    delete newChat._id;
-    socket.to(touid).emit("chat:receivemessage", newChat);
+
     acknowledgmentCallback(newChat);
   };
 

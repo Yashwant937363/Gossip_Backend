@@ -45,6 +45,7 @@ const getUser = async (req, res) => {
         email: user.Email,
         uid: user.uid,
         dob: user.DOB,
+        settings: user.settings,
       },
     });
   }
@@ -118,6 +119,12 @@ const signupUser = async (req, res) => {
       DOB: dob,
       Password: password,
       uid: nanoid(5),
+      settings: {
+        translation: {
+          language: "original",
+          alwaysTranslate: false,
+        },
+      },
     });
 
     const data = {
@@ -172,6 +179,7 @@ const signinUser = async (req, res) => {
       fullname: { firstname: user.FirstName, lastname: user.LastName },
       uid: user.uid,
       dob: user.DOB,
+      settings: user.settings,
     });
   } catch (err) {
     console.log("Error while Login User : ", err);

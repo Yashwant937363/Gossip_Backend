@@ -1,6 +1,8 @@
+const { filter } = require("fuzzy");
 const Chat = require("../schemas/chat");
 const User = require("../schemas/user");
 const { UsersStore } = require("../store/sessionStore");
+const { translateMultipleMessages } = require("../sockets/ai_proxy");
 
 const getFriendsandChats = async (req, res) => {
   try {
@@ -12,7 +14,7 @@ const getFriendsandChats = async (req, res) => {
     const uid = user.uid;
     const friends = await Chat.find({
       $or: [{ Sender_ID: uid }, { Receiver_ID: uid }],
-      text: "friend",
+      type: "friend",
     });
 
     if (friends.length == 0) {
@@ -52,11 +54,54 @@ const getFriendsandChats = async (req, res) => {
       })
     );
 
-    const chats = await Chat.find({
+    let chats = await Chat.find({
       $or: [{ Sender_ID: uid }, { Receiver_ID: uid }],
-      text: { $ne: "friend" },
-    }).select({ _id: 0, __v: 0 });
-
+      type: { $ne: "friend" },
+    }).select({ __v: 0 });
+    // TODO: check for user settings
+    if (
+      user.settings.translation.alwaysTranslate &&
+      user.settings.translation.language !== "original"
+    ) {
+      const filterChatsForTranslation = chats.filter(
+        (chat) =>
+          chat.Receiver_ID === uid &&
+          chat.type === "text" &&
+          !chat.translatedText.some(
+            (t) => t.language === user.settings.translation.language
+          )
+      );
+      const inputTranslateText = filterChatsForTranslation.map((chat) => {
+        return {
+          id: chat._id.toString(),
+          text: chat.text,
+        };
+      });
+      const translatedReceivedChats = await translateMultipleMessages({
+        messages: inputTranslateText,
+        to: user.settings.translation.language,
+      });
+      const { messages, language } = translatedReceivedChats;
+      if (translatedReceivedChats) {
+        chats = chats.map((chat) => {
+          // console.log(chat);
+          const translatedText = messages.find(
+            (message) => message.id === chat._id.toString()
+          );
+          // let newChat = { ...chat };
+          // console.log(newChat);
+          // chat.text = "hello";
+          if (translatedText) {
+            chat.translatedText.push({
+              language,
+              translatedText: translatedText.translatedText,
+            });
+          }
+          return chat;
+        });
+      }
+    }
+    // console.log("Updated", chats);
     res.status(200).json({ msg: "ok", friends: newFriends, chats: chats });
   } catch (error) {
     console.log(error);
