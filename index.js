@@ -12,6 +12,7 @@ const registerUserHandlers = require("./sockets/user");
 const registerChatHandlers = require("./sockets/chat");
 const registerCallHandlers = require("./sockets/call");
 const registerAiProxyHandlers = require("./sockets/ai_proxy");
+const registerSettingsHandlers = require("./sockets/settings");
 const server = require("http").createServer(app);
 const { Server } = require("socket.io");
 const { UsersStore } = require("./store/sessionStore");
@@ -28,6 +29,7 @@ const onConnection = (socket) => {
   registerChatHandlers(io, socket, UsersStore);
   registerCallHandlers(io, socket);
   registerAiProxyHandlers(io, socket, UsersStore);
+  registerSettingsHandlers(io, socket, UsersStore);
 };
 
 io.on("connection", onConnection);
@@ -46,3 +48,4 @@ app.use("/api/auth/", require("./routes/auth"));
 app.use("/api/chat/", require("./routes/chat"));
 
 server.listen(PORT, () => console.log("Server running on PORT : " + PORT));
+console.log("hello world");

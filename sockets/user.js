@@ -3,21 +3,22 @@ const User = require("../schemas/user");
 
 module.exports = (io, socket, UsersStore) => {
   const createConnection = async function (
-    { profile, uid, username },
+    { profile, uid, username, settings },
     acknowledgmentCallback
   ) {
     try {
       UsersStore.saveUser(uid, {
-        uid: uid,
-        profile: profile,
-        username: username,
+        uid,
+        profile,
+        username,
+        settings,
         connected: true,
       });
       socket.uid = uid;
       socket.join(uid);
       const friends = await Chat.find({
         $or: [{ Sender_ID: uid }, { Receiver_ID: uid }],
-        text: "friend",
+        type: "friend",
       });
 
       friends.map(async (item) => {
@@ -27,7 +28,7 @@ module.exports = (io, socket, UsersStore) => {
           socket.to(item.Sender_ID).emit("friendonline", { uid });
         }
       });
-      await Chat.updateMany({ Receiver_ID: uid }, { seen: false });
+      await Chat.updateMany({ Receiver_ID: uid, seen: null }, { seen: false });
       acknowledgmentCallback({
         success: true,
         msg: "user connected succesfully",
@@ -39,7 +40,6 @@ module.exports = (io, socket, UsersStore) => {
       });
     }
   };
-
   const findUser = function (uid, sendusers) {
     const Users = UsersStore.findUser(uid, socket.uid);
     sendusers(Users);
@@ -81,7 +81,7 @@ module.exports = (io, socket, UsersStore) => {
     if (socket.uid) {
       const friends = await Chat.find({
         $or: [{ Sender_ID: uid }, { Receiver_ID: uid }],
-        text: "friend",
+        type: "friend",
       });
       friends.map(async (item) => {
         if (item.Sender_ID === uid) {
@@ -116,7 +116,6 @@ module.exports = (io, socket, UsersStore) => {
           text: "friend",
         });
         const user = UsersStore.getUser(touid);
-        console.log(user);
         socket.to(fromuid).emit("successmessage", {
           msg: "Request Accepted by " + tousername,
           user: {

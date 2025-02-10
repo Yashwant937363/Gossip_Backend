@@ -1,6 +1,20 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
+const translatedChatSchema = new Schema(
+  {
+    language: {
+      type: String,
+      required: true,
+    },
+    translatedText: {
+      type: String,
+      required: true,
+    },
+  },
+  { _id: false }
+);
+
 const chatSchema = new Schema(
   {
     Sender_ID: {
@@ -24,6 +38,10 @@ const chatSchema = new Schema(
     type: {
       type: String,
       required: true,
+    },
+    translatedText: {
+      type: [translatedChatSchema],
+      default: [],
     },
   },
   { timestamps: true }
