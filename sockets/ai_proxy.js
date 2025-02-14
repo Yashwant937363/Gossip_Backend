@@ -16,8 +16,30 @@ module.exports = (io, socket, UsersStore) => {
     });
     response(data.data?.caption);
   };
+  const handleTranslateMultipleMessages = async ({ messages, to }, uid) => {
+    console.log("translate multiple messages request received");
+    console.log("outside uid", socket.id);
+    let response = await module.exports.translateMultipleMessages({
+      messages,
+      to,
+    });
+
+    socket.emit("ai:translated:multiple-messages", response); // ✅ Sends data over the socket
+  };
+
+  const handleTranslateSingleMessage = async ({ id, text, to }, response) => {
+    console.log("single translate");
+    let translated = await module.exports.translateSingleMessage({
+      id,
+      text,
+      to,
+    });
+    response(translated);
+  };
   socket.on("ai:chatbot:fromclient", handleChatbotRequest);
   socket.on("ai:image-analyze", handleImageAnalyze);
+  socket.on("ai:translate:multiple-messages", handleTranslateMultipleMessages);
+  socket.on("ai:translate:single-message", handleTranslateSingleMessage);
 };
 
 module.exports.translateSingleMessage = async ({ id, text, to }) => {
@@ -29,14 +51,31 @@ module.exports.translateSingleMessage = async ({ id, text, to }) => {
     }
   );
   if (id !== "new") {
-    Chat.findByIdAndUpdate(id, {
-      $addToSet: {
-        translatedText: {
-          language: data.data.language,
-          translatedText: data.data.translatedText,
+    Chat.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          translatedText: {
+            $concatArrays: [
+              {
+                $filter: {
+                  input: "$translatedText",
+                  as: "t",
+                  cond: { $ne: ["$$t.language", data.data.language] }, // Keep only entries with a different language
+                },
+              },
+              [
+                {
+                  language: data.data.language,
+                  translatedText: data.data.translatedText,
+                },
+              ],
+            ],
+          },
         },
       },
-    });
+      { new: true }
+    );
   }
   return data.data;
 };
