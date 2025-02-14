@@ -84,13 +84,9 @@ const getFriendsandChats = async (req, res) => {
       const { messages, language } = translatedReceivedChats;
       if (translatedReceivedChats) {
         chats = chats.map((chat) => {
-          // console.log(chat);
           const translatedText = messages.find(
             (message) => message.id === chat._id.toString()
           );
-          // let newChat = { ...chat };
-          // console.log(newChat);
-          // chat.text = "hello";
           if (translatedText) {
             chat.translatedText.push({
               language,
