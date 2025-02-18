@@ -26,6 +26,7 @@ module.exports = (io, socket, UsersStore) => {
     { fromuid, touid, message, type },
     acknowledgmentCallback
   ) => {
+    console.log(message);
     let newChat;
     if (type === "text") {
       if (message.trim() == "") {
@@ -41,11 +42,12 @@ module.exports = (io, socket, UsersStore) => {
       });
       const downloadurl = await getDownloadURL(snapshot.ref);
       message = downloadurl;
+      console.log(downloadurl);
     }
     const user = UsersStore.getUser(touid);
     if (user) {
       let getTranslated;
-      if (user.settings?.translation.alwaysTranslate) {
+      if (user.settings?.translation.alwaysTranslate && type === "text") {
         getTranslated = await translateSingleMessage({
           id: "new",
           text: message,
