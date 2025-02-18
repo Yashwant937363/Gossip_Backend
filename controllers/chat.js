@@ -68,7 +68,7 @@ const getFriendsandChats = async (req, res) => {
           chat.Receiver_ID === uid &&
           chat.type === "text" &&
           !chat.translatedText.some(
-            (t) => t.language === user.settings.translation.language
+            (t) => t?.language === user.settings.translation.language
           )
       );
       const inputTranslateText = filterChatsForTranslation.map((chat) => {
