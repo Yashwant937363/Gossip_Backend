@@ -9,6 +9,7 @@ const {
   signupUser,
   updateUser,
   deleteUser,
+  sendEmailOtp,
 } = require("../controllers/auth");
 const multer = require("multer");
 const fs = require("fs");
@@ -56,6 +57,8 @@ router.post(
   ],
   signinUser
 );
+
+router.post("/send-email-otp", sendEmailOtp);
 
 router.get("/profile/:name", async (req, res) => {
   const fileName = req.params.name;

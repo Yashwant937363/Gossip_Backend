@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const { initializeApp } = require("firebase/app");
+const nodemailer = require("nodemailer");
 const {
   getStorage,
   ref,
@@ -125,7 +126,7 @@ const signupUser = async (req, res) => {
           alwaysTranslate: false,
         },
         summarization: {
-          format: "Paragraph",
+          format: "paragraph",
         },
       },
     });
@@ -190,8 +191,63 @@ const signinUser = async (req, res) => {
   }
 };
 
+const email = process.env.Email;
+const password = process.env.AppPassword;
+
+const sendEmailOtp = (req, res) => {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  let transporter = nodemailer.createTransport({
+    service: "gmail", // e.g., 'gmail', 'yahoo', 'outlook'
+    auth: {
+      user: email, // Your email
+      pass: password,
+    },
+  });
+
+  // Step 2: Define the email options
+  let mailOptions = {
+    from: email, // Sender address
+    to: req.body.email, // Recipient's email
+    subject: "Your One-Time Password (OTP) for Verification", // Subject line
+    text: `Dear User,\n\nYour One-Time Password (OTP) for verification is: ${otp}\n\nPlease use this OTP to complete your verification. Do not share it with anyone.\n\nBest regards,\nGossip AI`, // Plain text body
+    html: `
+        <p>Dear User,</p>
+        <p>Your One-Time Password (OTP) for verification is: <strong>${otp}</strong></p>
+        <p>Please use this OTP to complete your verification. Do not share it with anyone.</p>
+        <p>
+            <button onclick="navigator.clipboard.writeText('${otp}')" style="background:#4CAF50;color:white;padding:10px 15px;border:none;border-radius:5px;cursor:pointer;">
+                Copy OTP
+            </button>
+        </p>
+        <p>Best regards,<br>Gossip AI</p>
+    `, // HTML body with Copy OTP button
+  };
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log("Error occurred:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send email",
+        error: error.message,
+      });
+    }
+    console.log("Email sent:", info);
+    res
+      .status(200)
+      .json({ success: true, message: "Email sent successfully", otp });
+  });
+};
+
 const updateUser = () => {};
 
 const deleteUser = () => {};
 
-module.exports = { getUser, signinUser, signupUser, updateUser, deleteUser };
+module.exports = {
+  getUser,
+  signinUser,
+  signupUser,
+  updateUser,
+  deleteUser,
+  sendEmailOtp,
+};
