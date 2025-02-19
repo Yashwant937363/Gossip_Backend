@@ -35,11 +35,15 @@ const onConnection = (socket) => {
 io.on("connection", onConnection);
 
 app.use(express.json());
+
 app.use(
-  cors()
-  // {
-  //   origin: process.env.CORS_CLIENT_URL,}
+  cors({
+    origin: "*", // Allows all origins (not recommended for production)
+    methods: "GET, POST, PUT, DELETE",
+    allowedHeaders: "Content-Type, Authorization",
+  })
 );
+
 app.get("/", (req, res) => {
   res.send("hello world");
 });
