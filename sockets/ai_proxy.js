@@ -36,10 +36,29 @@ module.exports = (io, socket, UsersStore) => {
     });
     response(translated);
   };
+  const summarizationChat = async ({ conversation, format }, response) => {
+    try {
+      const data = await axios.post(AIServerURL + "/api/ai/summarize", {
+        conversation,
+        method: format,
+      });
+      console.log(data.data);
+      if (data.status === 422) {
+        response(false);
+      } else {
+        response(data.data);
+      }
+    } catch (error) {
+      console.log("Error");
+      console.log(error);
+      response(false);
+    }
+  };
   socket.on("ai:chatbot:fromclient", handleChatbotRequest);
   socket.on("ai:image-analyze", handleImageAnalyze);
   socket.on("ai:translate:multiple-messages", handleTranslateMultipleMessages);
   socket.on("ai:translate:single-message", handleTranslateSingleMessage);
+  socket.on("ai:summarization", summarizationChat);
 };
 
 module.exports.translateSingleMessage = async ({ id, text, to }) => {

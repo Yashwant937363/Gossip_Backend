@@ -124,6 +124,9 @@ const signupUser = async (req, res) => {
           language: "original",
           alwaysTranslate: false,
         },
+        summarization: {
+          format: "Paragraph",
+        },
       },
     });
 

@@ -15,12 +15,26 @@ const TranslationSettingsSchema = new Schema(
   },
   { _id: false }
 );
+const SummarziationSettingsSchema = new Schema(
+  {
+    format: {
+      type: String,
+      enum: ["paragraph", "bullet", "structured"],
+      required: true,
+    },
+  },
+  { _id: false }
+);
 
 // Define Settings Schema
 const SettingsSchema = new Schema(
   {
     translation: {
       type: TranslationSettingsSchema,
+      required: true,
+    },
+    summarization: {
+      type: SummarziationSettingsSchema,
       required: true,
     },
   },
