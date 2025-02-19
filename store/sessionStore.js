@@ -54,6 +54,13 @@ class ServerUserStore extends UserStore {
       this.users.set(uid, user);
     }
   }
+  updateSummarizationSettings(uid, summarizationObject) {
+    if (this.users.has(uid)) {
+      let user = this.users.get(uid);
+      user.settings.summarizaiton = summarizationObject;
+      this.users.set(uid, user);
+    }
+  }
 }
 
 const UsersStore = new ServerUserStore();

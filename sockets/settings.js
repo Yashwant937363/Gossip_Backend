@@ -39,6 +39,25 @@ module.exports = (io, socket, UsersStore) => {
       console.log("Error", error);
     }
   };
+  const changeSummarizationFormat = async ({ authtoken, format }) => {
+    try {
+      const data = jwt.verify(authtoken, JWT_SECRET);
+      const id = data.user.id;
+      const updatedUser = await User.findByIdAndUpdate(
+        id,
+        { $set: { "settings.summarization.format": format } },
+        { new: true }
+      );
+      UsersStore.updateSummarizationSettings(
+        updatedUser.uid,
+        updatedUser.settings.summarization
+      );
+    } catch (error) {
+      console.log("Error", error);
+    }
+  };
+
   socket.on("settings:translate:languageChange", changeLanguage);
   socket.on("settings:translate:alwaysTranslateChange", changeAlWaysTranslate);
+  socket.on("settings:summarization:formatChange", changeSummarizationFormat);
 };
