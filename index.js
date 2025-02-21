@@ -36,13 +36,7 @@ io.on("connection", onConnection);
 
 app.use(express.json());
 
-app.use(
-  cors({
-    origin: "*", // Allows all origins (not recommended for production)
-    methods: "GET, POST, PUT, DELETE",
-    allowedHeaders: "Content-Type, Authorization",
-  })
-);
+app.use(cors());
 
 app.get("/", (req, res) => {
   res.send("hello world");
