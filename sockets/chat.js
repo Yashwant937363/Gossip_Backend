@@ -1,30 +1,18 @@
 const Chat = require("../schemas/chat");
-const {
-  ref,
-  getStorage,
-  uploadBytes,
-  getDownloadURL,
-} = require("firebase/storage");
-const { initializeApp } = require("firebase/app");
+const cloudinary = require("cloudinary").v2;
 const { translateSingleMessage } = require("./ai_proxy");
 
-const firebaseConfig = {
-  apiKey: process.env.apiKey,
-  authDomain: process.env.authDomain,
-  projectId: process.env.projectId,
-  storageBucket: process.env.storageBucket,
-  messagingSenderId: process.env.messagingSenderId,
-  appId: process.env.appId,
-  measurementId: process.env.measurementId,
-};
-initializeApp(firebaseConfig);
-
-const storage = getStorage();
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
 
 module.exports = (io, socket, UsersStore) => {
   const sendMessage = async (
     { fromuid, touid, message, type },
-    acknowledgmentCallback
+    acknowledgmentCallback,
   ) => {
     console.log(message);
     let newChat;
@@ -33,15 +21,33 @@ module.exports = (io, socket, UsersStore) => {
         return acknowledgmentCallback(false);
       }
     } else if (type === "image") {
+      console.log("got image");
       const buffer = Buffer.from(message?.data);
       const extension = message?.type.split("/")[1];
-      const fileName = `image_${Date.now() + "." + extension}`;
-      const storageRef = ref(storage, `images/${fileName}`);
-      const snapshot = await uploadBytes(storageRef, buffer, {
-        contentType: message?.type,
+
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "images",
+            resource_type: "image",
+            format: extension,
+          },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          },
+        );
+
+        uploadStream.end(buffer);
       });
-      const downloadurl = await getDownloadURL(snapshot.ref);
+
+      const downloadurl = result.secure_url;
+
       message = downloadurl;
+
       console.log(downloadurl);
     }
     const user = UsersStore.getUser(touid);
@@ -79,7 +85,7 @@ module.exports = (io, socket, UsersStore) => {
     try {
       await Chat.updateMany(
         { Sender_ID: fromuid, Receiver_ID: touid },
-        { seen: true }
+        { seen: true },
       );
       socket.to(fromuid).emit("seenmessages", { uid: touid });
     } catch (error) {

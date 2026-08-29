@@ -14,7 +14,8 @@ module.exports = (io, socket, UsersStore) => {
     const data = await axios.post(AIServerURL + "/api/ai/analyze-image", {
       url,
     });
-    response(data.data?.caption);
+    console.log("My Data:", data);
+    response(data.data?.data);
   };
   const handleTranslateMultipleMessages = async ({ messages, to }, uid) => {
     console.log("translate multiple messages request received");
@@ -67,7 +68,7 @@ module.exports.translateSingleMessage = async ({ id, text, to }) => {
     {
       text,
       to,
-    }
+    },
   );
   if (id !== "new") {
     Chat.findByIdAndUpdate(
@@ -93,7 +94,7 @@ module.exports.translateSingleMessage = async ({ id, text, to }) => {
           },
         },
       },
-      { new: true }
+      { new: true },
     );
   }
   return data.data;
@@ -106,7 +107,7 @@ module.exports.translateMultipleMessages = async ({ messages, to }) => {
     {
       messages,
       to,
-    }
+    },
   );
   bulkUpdateChats(data.data);
   return data.data;

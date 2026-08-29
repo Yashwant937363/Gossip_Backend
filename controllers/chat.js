@@ -22,6 +22,15 @@ const getFriendsandChats = async (req, res) => {
         error: "no friends found",
       });
     }
+    console.log(
+      friends.map((item) => {
+        if (item.Sender_ID === uid) {
+          return item.Receiver_ID;
+        } else {
+          return item.Sender_ID;
+        }
+      }),
+    );
 
     const newFriends = await Promise.all(
       friends.map(async (item) => {
@@ -41,17 +50,17 @@ const getFriendsandChats = async (req, res) => {
         }
         finduser = new Array(...finduser);
         if (finduser.length) {
-          (onlineuser.uid = finduser[0]?.uid),
+          ((onlineuser.uid = finduser[0]?.uid),
             (onlineuser.profile = finduser[0]?.profile),
             (onlineuser.username = finduser[0]?.username),
-            (onlineuser.online = true);
+            (onlineuser.online = true));
         } else {
           const finduser = await User.findOne({ uid: onlineuser.uid });
           onlineuser.profile = finduser?.ProfilePicture;
           onlineuser.username = finduser.Username;
         }
         return onlineuser;
-      })
+      }),
     );
 
     let chats = await Chat.find({
@@ -68,8 +77,8 @@ const getFriendsandChats = async (req, res) => {
           chat.Receiver_ID === uid &&
           chat.type === "text" &&
           !chat.translatedText.some(
-            (t) => t?.language === user.settings.translation.language
-          )
+            (t) => t?.language === user.settings.translation.language,
+          ),
       );
       const inputTranslateText = filterChatsForTranslation.map((chat) => {
         return {
@@ -85,7 +94,7 @@ const getFriendsandChats = async (req, res) => {
       if (translatedReceivedChats) {
         chats = chats.map((chat) => {
           const translatedText = messages.find(
-            (message) => message.id === chat._id.toString()
+            (message) => message.id === chat._id.toString(),
           );
           if (translatedText) {
             chat.translatedText.push({
@@ -101,6 +110,9 @@ const getFriendsandChats = async (req, res) => {
     res.status(200).json({ msg: "ok", friends: newFriends, chats: chats });
   } catch (error) {
     console.log(error);
+    return res
+      .status(500)
+      .json({ error: "Something went wrong while fetching chats data" });
   }
 };
 
