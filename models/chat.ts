@@ -1,7 +1,11 @@
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
+import mongoose, { Schema } from "mongoose";
 
-const translatedChatSchema = new Schema(
+export interface ITranslatedChat {
+  language: string;
+  translatedText: string;
+}
+
+const translatedChatSchema = new Schema<ITranslatedChat>(
   {
     language: {
       type: String,
@@ -12,10 +16,19 @@ const translatedChatSchema = new Schema(
       required: true,
     },
   },
-  { _id: false }
+  { _id: false },
 );
 
-const chatSchema = new Schema(
+export interface IChat {
+  Sender_ID: string;
+  Receiver_ID: string;
+  text: string;
+  seen: boolean | null;
+  type: string;
+  translatedText: ITranslatedChat[];
+}
+
+const chatSchema = new Schema<IChat>(
   {
     Sender_ID: {
       type: String,
@@ -44,8 +57,8 @@ const chatSchema = new Schema(
       default: [],
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Chat = mongoose.model("Chat", chatSchema);
-module.exports = Chat;
+export default Chat;
