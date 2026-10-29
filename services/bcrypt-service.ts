@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 
-export const getHash = async (data: string) => {
-  const salt = await bcrypt.genSalt(10);
+export const getHash = async (data: string, rounds: number = 10) => {
+  const salt = await bcrypt.genSalt(rounds);
   const hash = await bcrypt.hash(data, salt);
   return hash;
 };

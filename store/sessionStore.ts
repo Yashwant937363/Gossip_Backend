@@ -49,7 +49,7 @@ export abstract class UserStore {
   ): void;
 }
 
-class ServerUserStore extends UserStore {
+export class ServerUserStore extends UserStore {
   private users = new Map<string, UserSession>();
 
   findUser(uid: string, socketuid: string): UserSearchResult[] {
@@ -100,6 +100,9 @@ class ServerUserStore extends UserStore {
     if (user) {
       user.settings.summarization = summarizationObject;
     }
+  }
+  clear(): void {
+    this.users.clear();
   }
 }
 

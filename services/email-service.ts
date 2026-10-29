@@ -1,17 +1,19 @@
+import { Transporter } from "nodemailer";
+import { env } from "../config/env.js";
 import transporter from "../config/mailer.js";
 
-const email = process.env.EMAIL;
-
-export function generateEmailOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+export function generateEmailOtp(randomFn = Math.random): string {
+  return Math.floor(100000 + randomFn() * 900000).toString();
 }
 
 export async function sendEmailOtp(
   recipientEmail: string,
   otp: string,
+  senderEmail = env.email,
+  mailer: Pick<Transporter, "sendMail"> = transporter,
 ): Promise<void> {
-  await transporter.sendMail({
-    from: email,
+  await mailer.sendMail({
+    from: senderEmail,
     to: recipientEmail,
     subject: "Your One-Time Password (OTP) for Verification",
     text: `Dear User,

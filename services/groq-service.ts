@@ -1,4 +1,7 @@
-import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/completions.js";
+import type {
+  ChatCompletionCreateParamsNonStreaming,
+  ChatCompletionMessageParam,
+} from "groq-sdk/resources/chat/completions.js";
 import groq, { GROQ_MODELS } from "../config/groq.js";
 import ANALYZE_IMAGE_SYSTEM_PROMPT from "../prompts/analyze-image-prompt.js";
 import {
@@ -31,8 +34,28 @@ import type {
   TranslateMessagesResult,
 } from "../types/groq-types.js";
 
-// Helper to safely parse JSON from model responses
-function safeParseJson(content: string | null | undefined): any {
+/**
+ * Type definition for Groq chat completion runner.
+ * Takes parameters and returns the string text response.
+ */
+export type GroqRunner = (
+  params: ChatCompletionCreateParamsNonStreaming,
+) => Promise<string>;
+
+/**
+ * Default production runner that executes the call using the real Groq client.
+ */
+export async function executeGroqChat(
+  params: ChatCompletionCreateParamsNonStreaming,
+): Promise<string> {
+  const response = await groq.chat.completions.create(params);
+  return response.choices[0]?.message?.content || "";
+}
+
+/**
+ * Helper to safely parse JSON from model responses, stripping markdown code fences if present.
+ */
+export function safeParseJson(content: string | null | undefined): any {
   if (!content) {
     throw new Error("Empty response received from Groq AI model");
   }
@@ -55,6 +78,7 @@ function safeParseJson(content: string | null | undefined): any {
  */
 export async function analyzeImage(
   input: AnalyzeImageInput,
+  runner: GroqRunner = executeGroqChat,
 ): Promise<ImageAnalysisResult> {
   const userContent: Array<
     | { type: "text"; text: string }
@@ -85,13 +109,12 @@ export async function analyzeImage(
     },
   ];
 
-  const response = await groq.chat.completions.create({
+  const content = await runner({
     model: GROQ_MODELS.VISION,
     messages,
     response_format: { type: "json_object" },
   });
 
-  const content = response.choices[0]?.message?.content;
   const parsed = safeParseJson(content);
   return imageAnalysisSchema.parse(parsed);
 }
@@ -102,6 +125,7 @@ export async function analyzeImage(
  */
 export async function generateChatbotReply(
   input: ChatbotInput,
+  runner: GroqRunner = executeGroqChat,
 ): Promise<ChatbotResult> {
   const selectedTone: Tone = input.tone || "normal";
   const toneInstruction =
@@ -130,12 +154,11 @@ export async function generateChatbotReply(
     content: input.message,
   });
 
-  const response = await groq.chat.completions.create({
+  const reply = await runner({
     model: GROQ_MODELS.DEFAULT,
     messages,
   });
 
-  const reply = response.choices[0]?.message?.content || "";
   return {
     reply,
     tone: selectedTone,
@@ -149,6 +172,7 @@ export async function generateChatbotReply(
  */
 export async function translateMessages(
   input: TranslateMessagesInput,
+  runner: GroqRunner = executeGroqChat,
 ): Promise<TranslateMessagesResult> {
   if (!input.messages || input.messages.length === 0) {
     return {
@@ -173,13 +197,12 @@ export async function translateMessages(
     },
   ];
 
-  const response = await groq.chat.completions.create({
+  const content = await runner({
     model: GROQ_MODELS.DEFAULT,
     messages,
     response_format: { type: "json_object" },
   });
 
-  const content = response.choices[0]?.message?.content;
   const parsed = safeParseJson(content);
   return translateMessagesResponseSchema.parse(parsed);
 }
@@ -191,6 +214,7 @@ export async function translateMessages(
  */
 export async function summarizeConversation(
   input: SummarizationInput,
+  runner: GroqRunner = executeGroqChat,
 ): Promise<SummarizationResult> {
   const format: SummarizationFormat = input.format || "paragraph";
 
@@ -225,13 +249,12 @@ export async function summarizeConversation(
     },
   ];
 
-  const response = await groq.chat.completions.create({
+  const content = await runner({
     model: GROQ_MODELS.DEFAULT,
     messages,
     response_format: { type: "json_object" },
   });
 
-  const content = response.choices[0]?.message?.content;
   const parsed = safeParseJson(content);
 
   switch (format) {

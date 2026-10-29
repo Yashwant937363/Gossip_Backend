@@ -1,21 +1,14 @@
-import cors from "cors";
-import express from "express";
 import { createServer } from "node:http";
-import pinoHttp from "pino-http";
 import { Server } from "socket.io";
 import connectDatabase from "./config/database.js";
 import { env } from "./config/env.js";
-import { logger } from "./config/logger.js";
 import { authSocket } from "./middlewares/authSocket.js";
-import aiRouter from "./routes/ai.js";
-import authRouter from "./routes/auth.js";
-import chatRouter from "./routes/chat.js";
-import userRouter from "./routes/user.js";
 import registerCallHandlers from "./sockets/call.js";
 import registerChatHandlers from "./sockets/chat.js";
 import registerSettingsHandlers from "./sockets/settings.js";
 import registerUserHandlers, { setupUserSession } from "./sockets/user.js";
 import { UsersStore } from "./store/sessionStore.js";
+import app from "./app.js";
 import type {
   ClientToServerEvents,
   InterServerEvents,
@@ -25,10 +18,7 @@ import type {
   TypedSocket,
 } from "./types/socket-types.js";
 
-const app = express();
 const httpServer = createServer(app);
-
-app.use(pinoHttp.default({ logger, redact: ["req.headers.authorization"] }));
 
 const io: TypedServer = new Server<
   ClientToServerEvents,
@@ -65,18 +55,6 @@ const onConnection = async (socket: TypedSocket) => {
 };
 
 io.on("connection", onConnection);
-
-app.use(express.json());
-app.use(cors());
-
-app.get("/", (_req, res) => {
-  res.send("hello world");
-});
-
-app.use("/api/auth/", authRouter);
-app.use("/api/chat/", chatRouter);
-app.use("/api/ai/", aiRouter);
-app.use("/api/user/", userRouter);
 
 httpServer.listen(env.port, () =>
   console.log("Server running on PORT : " + env.port),
